@@ -11,7 +11,7 @@ import cv2
 import imageio
 import os, glob
 
-from src.configs import DATA_DIR, DATABASE_CONF, ALL_METHODS, METHODS_PARAM
+from src.configs import ALL_DATABASES, DATA_DIR, DATABASE_CONF, ALL_METHODS, METHODS_PARAM
 from src.core.classifier import recognition
 from src.core import features
 
@@ -26,6 +26,7 @@ class MainBox(BoxLayout):
 
         self.method = 'scale'
         self.database = 'ORL'
+        self.database_data = None
 
         with self.canvas:
             Color(.2, .3, .5, 1)
@@ -33,14 +34,29 @@ class MainBox(BoxLayout):
             self.bind(pos = self.update_bg, size = self.update_bg)
 
         ''' 1. Tools BOX ================================ '''
-        self.box_tools = BoxLayout(orientation='horizontal', size_hint=(1, 0.15), spacing = 10)
+        self.box_tools = BoxLayout(orientation='horizontal', size_hint=(1, 0.1), spacing = 10)
 
-        ''' 1.1 Control img BOX ================================ '''
+        ''' 1.1 DB List ================================ '''
+        # List of methods
+        self.dropdown_databases = DropDown()
+        for database in ALL_DATABASES: 
+            btn = Button(
+                text = database, on_press=self.set_database, 
+                size_hint_y = None, height = 30, 
+                background_color = (.6, .9, 1, .7)) 
+            btn.bind(on_release = lambda btn: self.dropdown_databases.select(btn.text)) 
+            self.dropdown_databases.add_widget(btn) 
+        self.list_databases = Button(text ='Базы', size_hint=(.05, 1), background_color = (.6, .9, 1, 1))
+        self.list_databases.bind(on_release = self.dropdown_databases.open)
+        self.dropdown_databases.bind(on_select = lambda instance, x: setattr(self.list_databases, 'text', x))
+
+        ''' 1.2 Control img BOX ================================ '''
         
+        self.source_img = None
         self.index_group = 1
         self.index_img =  1
 
-        self.box_control_img = BoxLayout(orientation='vertical', size_hint=(.4, 1), spacing = 0)
+        self.box_control_img = BoxLayout(orientation='vertical', size_hint=(.35, 1), spacing = 0)
         
         self.box_bth_group = BoxLayout(orientation='horizontal', size_hint=(1,.1))
         self.bth_group_left = Button(text='<- группа', on_press=self.group_left, background_color = (.2, .5, 1, 1))
@@ -57,23 +73,19 @@ class MainBox(BoxLayout):
         self.box_control_img.add_widget(self.box_bth_group)
         self.box_control_img.add_widget(self.box_bth_img)
 
-        ''' 1.2 Control DB search BOX ================================ '''
-        self.box_control_db_search = BoxLayout(orientation='vertical', size_hint=(.1, .95), spacing = 0)
-        self.box_control_db_search_title = Label(text='База поиска', size_hint=(1,0.1))
+        ''' 1.3 Control DB search BOX ================================ '''
+        self.box_control_db_search = BoxLayout(orientation='vertical', size_hint=(.1, 1), spacing = 0)
+        self.box_control_db_search_title = Label(text='База поиска', size_hint=(1,0.2))
         
-        self.box_group = BoxLayout(orientation='horizontal', size_hint=(1,.45), spacing = 0)
-        self.group_border_left = TextInput(text='1', size_hint=(1, 0.5),
-            multiline=False, input_type='number', input_filter='int', pos_hint={"center_y":.5})
-        self.group_border_right = TextInput(text=str(DATABASE_CONF[self.database]['number_group']), size_hint=(1, 0.5),
-            multiline=False, input_type='number', input_filter='int', pos_hint={"center_y":.5})
+        self.box_group = BoxLayout(orientation='horizontal', size_hint=(1,.4), spacing = 0)
+        self.group_border_left = TextInput(size_hint=(.5, 1), multiline=False, input_type='number', input_filter='int', pos_hint={"center_x":.5})
+        self.group_border_right = TextInput(size_hint=(.5, 1), multiline=False, input_type='number', input_filter='int', pos_hint={"center_x":.5})
         self.box_group.add_widget(self.group_border_left)
         self.box_group.add_widget(self.group_border_right)
 
-        self.box_index = BoxLayout(orientation='horizontal', size_hint=(1,.45), spacing = 0)
-        self.index_border_left = TextInput(text='1', size_hint=(1, 0.5),
-            multiline=False, input_type='number', input_filter='int', pos_hint={"center_y":.5})
-        self.index_border_right = TextInput(text=str(DATABASE_CONF[self.database]['number_img']), size_hint=(1, 0.5),
-            multiline=False, input_type='number', input_filter='int', pos_hint={"center_y":.5})
+        self.box_index = BoxLayout(orientation='horizontal', size_hint=(1,.4), spacing = 0)
+        self.index_border_left = TextInput(size_hint=(.5, 1), multiline=False, input_type='number', input_filter='int', pos_hint={"center_x":.5})
+        self.index_border_right = TextInput(size_hint=(.5, 1), multiline=False, input_type='number', input_filter='int', pos_hint={"center_x":.5})
         self.box_index.add_widget(self.index_border_left)
         self.box_index.add_widget(self.index_border_right)
 
@@ -81,7 +93,7 @@ class MainBox(BoxLayout):
         self.box_control_db_search.add_widget(self.box_group)
         self.box_control_db_search.add_widget(self.box_index)
 
-        ''' 1.3 Control methods BOX ================================ '''
+        ''' 1.4 Control methods BOX ================================ '''
 
         self.box_control_methos = BoxLayout(orientation='horizontal', size_hint=(0.4, 1), spacing = 5)
 
@@ -118,23 +130,24 @@ class MainBox(BoxLayout):
         self.box_control_methos.add_widget(self.method_param_name)
         self.box_control_methos.add_widget(self.method_param)
 
+        self.box_tools.add_widget(self.list_databases)
         self.box_tools.add_widget(self.box_control_img)
         self.box_tools.add_widget(self.box_control_db_search)
         self.box_tools.add_widget(self.box_control_methos)
 
         ''' 2. Workspace BOX ================================ '''
 
-        self.box_workspace = BoxLayout(orientation='vertical', size_hint=(1, 0.85), spacing = 0)
+        self.box_workspace = BoxLayout(orientation='vertical', size_hint=(.6, .9), pos_hint={"center_x":.5}, spacing = 0)
         
-        self.box_input = BoxLayout(orientation='horizontal', size_hint=(1, 0.5), spacing = 0)
+        self.box_input = BoxLayout(orientation='horizontal', size_hint=(1, .5), spacing = 0)
         self.input_img = FigureCanvasKivyAgg(plt.figure(1))
         self.input_features = FigureCanvasKivyAgg(plt.figure(2))
         self.box_input.add_widget(self.input_img)
         self.box_input.add_widget(self.input_features)
         
-        self.box_output = BoxLayout(orientation='horizontal', size_hint=(1, 0.5), spacing = 0)
+        self.box_output = BoxLayout(orientation='horizontal', size_hint=(1, .5), spacing = 0)
         self.output_img = FigureCanvasKivyAgg(plt.figure(3)) ; plt.title('Результат распознавания', fontsize=self.fs)
-        self.output_features = FigureCanvasKivyAgg(plt.figure(4)); plt.title('Признаки результата', fontsize=self.fs)
+        self.output_features = FigureCanvasKivyAgg(plt.figure(4)) ; plt.title('Признаки результата', fontsize=self.fs)
         self.box_output.add_widget(self.output_img)
         self.box_output.add_widget(self.output_features)
 
@@ -144,19 +157,35 @@ class MainBox(BoxLayout):
         self.add_widget(self.box_tools)
         self.add_widget(self.box_workspace)
 
+        self._update_database()
         self._update_img()
+        self._update_db_search()
 
     def update_bg(self, *args): 
         self.bg.pos = self.pos ; self.bg.size = self.size
 
+    def _update_db_search(self):
+        self.group_border_left.text = '1'
+        self.group_border_right.text = str(DATABASE_CONF[self.database]['number_group'])
+        self.index_border_left.text = '1'
+        self.index_border_right.text = str(DATABASE_CONF[self.database]['number_img'])
+
+    def _update_database(self):
+        self.database_data = []
+        for g_i in range(DATABASE_CONF[self.database]['number_group']):
+            database_group = []
+            for im_i in range(DATABASE_CONF[self.database]['number_img']):
+                if self.database == 'ORL':
+                    img = cv2.imread(DATABASE_CONF['ORL']['img_path'].format(g=g_i+1, im=im_i+1), -1)
+                else:
+                    name_group = g_i+1 if g_i+1 >= 10 else f'0{g_i+1}'
+                    img = imageio.imread(list(glob.glob(DATABASE_CONF['Yale_faces']['img_path'].format(g=name_group)))[im_i])
+                database_group.append(img)
+            self.database_data.append(database_group)   
+
     def _update_img(self):
-        if self.database == 'ORL':
-            self.img_path = DATABASE_CONF['ORL']['img_path'].format(g=self.index_group, im=self.index_img)
-            source_img = cv2.imread(self.img_path, -1)
-        else:
-            name_group = self.index_group if self.index_group >= 10 else f'0{self.index_group}'
-            self.img_path = list(glob.glob(DATABASE_CONF['Yale_faces']['img_path'].format(g=name_group)))[self.index_img-1]
-            source_img = imageio.imread(self.img_path)
+        self.source_img = self.database_data[self.index_group-1][self.index_img-1]
+
         # placeholder_img = cv2.imread(os.path.join(DATA_DIR, 'default-placeholder.png'), -1)
         self.box_input.remove_widget(self.input_img)
         self.box_input.remove_widget(self.input_features)        
@@ -165,7 +194,7 @@ class MainBox(BoxLayout):
         self.box_input.add_widget(self.input_img)
         plt.figure(1)
         plt.clf() ; plt.cla()
-        plt.imshow(source_img, cmap='gray')
+        plt.imshow(self.source_img, cmap='gray')
         plt.title("Изображение ( {im_i}/{im_n} | {g_i}/{g_n} )".format(
             im_i=self.index_img,
             im_n=DATABASE_CONF[self.database]['number_img'],
@@ -177,6 +206,12 @@ class MainBox(BoxLayout):
         self.box_input.add_widget(self.input_features)
         plt.figure(2)
         plt.title('Признаки изображения', fontsize=self.fs)
+
+    def set_database(self, instance):
+        self.database = instance.text
+        self._update_database()
+        self._update_img()
+        self._update_db_search()
 
     def group_left(self, instance):
         if self.index_group != 1:
@@ -203,16 +238,10 @@ class MainBox(BoxLayout):
 
     def run_method(self, instance):        
         ''' ============== INPUT ============== '''
-        # Load source image
-        if self.database == 'ORL':
-            source_img = cv2.imread(self.img_path, -1)
-        else:
-            source_img = imageio.imread(self.img_path)
-
         method_param = int(self.method_param.text)
         if method_param < 0: return
 
-        source_img_features, _ = features.HANDLER[self.method](source_img, method_param)
+        source_img_features, _ = features.HANDLER[self.method](self.source_img, method_param)
 
         self.box_input.remove_widget(self.input_features)
         self.input_features = FigureCanvasKivyAgg(plt.figure(2))
@@ -225,18 +254,16 @@ class MainBox(BoxLayout):
         elif self.method == 'grad':
             x, y = source_img_features
             plt.plot(x, y)
+        elif self.method in ['spec_dct', 'spec_dft']:
+            h, w = source_img_features.shape
+            plt.imshow(source_img_features, cmap='gray')
+            plt.plot([0,0],[0,h-1],'r--', [0,w-1],[0,0],'r--', [0,w-1],[h-1,0],'r--')
         else:
             plt.imshow(source_img_features, cmap='gray')
         plt.title('Признаки изображения', fontsize=self.fs)
 
     def run_recognition(self, instance):        
         ''' ============== INPUT ============== '''
-        # Load source image
-        if self.database == 'ORL':
-            source_img = cv2.imread(self.img_path, -1)
-        else:
-            source_img = imageio.imread(self.img_path)
-
         method_param = int(self.method_param.text)
         if method_param < 0: return
 
@@ -250,7 +277,7 @@ class MainBox(BoxLayout):
             return
 
         source_img_features, rec_img, rec_img_features = recognition(
-            source_img, self.method, method_param, self.database, (g_left-1, g_right), (i_left-1, i_right))
+            self.source_img, self.method, method_param, self.database_data, (g_left-1, g_right), (i_left-1, i_right))
 
         self.box_input.remove_widget(self.input_features)
         self.input_features = FigureCanvasKivyAgg(plt.figure(2))
@@ -263,8 +290,12 @@ class MainBox(BoxLayout):
         elif self.method == 'grad':
             x, y = source_img_features
             plt.plot(x, y)
+        elif self.method in ['spec_dct', 'spec_dft']:
+            h, w = rec_img_features.shape
+            plt.imshow(rec_img_features, cmap='gray')
+            plt.plot([0,0],[0,h-1],'r--', [0,w-1],[0,0],'r--', [0,w-1],[h-1,0],'r--')
         else:
-            plt.imshow(source_img_features, cmap='gray')
+            plt.imshow(rec_img_features, cmap='gray')
         plt.title('Признаки изображения', fontsize=self.fs)
 
         self.box_output.remove_widget(self.output_img)
@@ -287,6 +318,10 @@ class MainBox(BoxLayout):
         elif self.method == 'grad':
             x, y = rec_img_features
             plt.plot(x, y)
+        elif self.method in ['spec_dct', 'spec_dft']:
+            h, w = rec_img_features.shape
+            plt.imshow(rec_img_features, cmap='gray')
+            plt.plot([0,0],[0,h-1],'r--', [0,w-1],[0,0],'r--', [0,w-1],[h-1,0],'r--')
         else:
             plt.imshow(rec_img_features, cmap='gray')
         plt.title('Признаки результата', fontsize=self.fs)
