@@ -9,9 +9,7 @@ from kivy.graphics import Color, Rectangle
 import os
 
 from src.ui.classifier import MainBox as CL_MainBox
-# from src.ui.viola_jones import MainBox as VJ_MainBox
-# from src.ui.lines_symmetry import MainBox as LS_MainBox
-from src.ui.configs import DATA_DIR
+from src.configs import DATA_DIR
 
 class MainBox(BoxLayout):
 
@@ -26,8 +24,7 @@ class MainBox(BoxLayout):
 
         self.current_mainbox = None
         self.cl_mainbox = CL_MainBox()
-        # self.vj_mainbox = VJ_MainBox()
-        # self.ls_mainbox = LS_MainBox()
+        self.sp_mainbox = None
 
         self.bth_to_menu  = Button(text='Меню', on_press=self.open_menu,
             size_hint = (0.1, 0.05), background_color = (.6, .9, 1, 1))
@@ -52,7 +49,7 @@ class MainBox(BoxLayout):
         self.remove_widget(self.list_submainboxes)
         
         if instance.text == "Классификатор": self.current_mainbox = self.cl_mainbox
-        if instance.text == "Поиск параметров": self.current_mainbox = self.vj_mainbox
+        if instance.text == "Поиск параметров": self.current_mainbox = self.sp_mainbox
         self.add_widget(self.current_mainbox)
 
     def open_menu(self, instance):

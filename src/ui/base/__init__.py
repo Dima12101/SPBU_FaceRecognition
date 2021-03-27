@@ -9,7 +9,7 @@ import os, glob
 import cv2
 import numpy as np
 
-from src.ui.configs import DATA_DIR, DATABASE_CONF
+from src.configs import DATA_DIR, DATABASE_CONF
 
 
 class ImgWidget(Widget): 
