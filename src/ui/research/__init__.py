@@ -76,7 +76,7 @@ class MainBox(BoxLayout):
         ''' 2. Research BOX ================================ '''
 
         self.research_box_1_N = ResearchBox_1_N(size_hint=(.95, .95), pos_hint={"center_x":.5})
-        self.research_box_L_NL = ResearchBox_L_NL(size_hint=(.95, .95), pos_hint={"center_x":.5})
+        self.research_box_L_NL = ResearchBox_L_NL(size_hint=(.6, .95), pos_hint={"center_x":.5})
         self.research_box = self.research_box_1_N
 
         self.add_widget(self.box_tools)

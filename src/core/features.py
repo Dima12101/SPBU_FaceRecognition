@@ -29,19 +29,20 @@ def _spec_zigzag(C, P):
 
 def spec_dft(img, P=20):
     '''Экстракция признаков методом DFT (Двумерное дискретное преобразование Фурье)'''
-    # return np.abs(np.fft.fft2(img)[0:P, 0:P])
-    M, N = img.shape
-    X = img.copy().astype(np.int32)
-    w_sin = lambda L, S: math.sin(2*math.pi*L/S)
-    w_cos = lambda L, S: math.cos(2*math.pi*L/S)
-    F_cos_P_M = np.array([[w_cos(j*i, M) for j in range(M)] for i in range(P)])
-    F_sin_P_M = np.array([[w_sin(j*i, M) for j in range(M)] for i in range(P)])
-    F_cos_N_P = np.array([[w_cos(j*i, N) for j in range(P)] for i in range(N)])
-    F_sin_N_P = np.array([[w_sin(j*i, N) for j in range(P)] for i in range(N)])
-    C_real = np.dot(np.dot(F_cos_P_M, X), F_cos_N_P) - np.dot(np.dot(F_sin_P_M, X), F_sin_N_P)
-    C_imag = np.dot(np.dot(F_cos_P_M, X), F_sin_N_P) + np.dot(np.dot(F_sin_P_M, X), F_cos_N_P)
-    C = np.sqrt(np.abs(C_real) + C_imag ** 2)
+    C = np.abs(np.fft.fft2(img)[0:P, 0:P])
     return C, _spec_zigzag(C, P)
+    # M, N = img.shape
+    # X = img.copy().astype(np.int32)
+    # w_sin = lambda L, S: math.sin(2*math.pi*L/S)
+    # w_cos = lambda L, S: math.cos(2*math.pi*L/S)
+    # F_cos_P_M = np.array([[w_cos(j*i, M) for j in range(M)] for i in range(P)])
+    # F_sin_P_M = np.array([[w_sin(j*i, M) for j in range(M)] for i in range(P)])
+    # F_cos_N_P = np.array([[w_cos(j*i, N) for j in range(P)] for i in range(N)])
+    # F_sin_N_P = np.array([[w_sin(j*i, N) for j in range(P)] for i in range(N)])
+    # C_real = np.dot(np.dot(F_cos_P_M, X), F_cos_N_P) - np.dot(np.dot(F_sin_P_M, X), F_sin_N_P)
+    # C_imag = np.dot(np.dot(F_cos_P_M, X), F_sin_N_P) + np.dot(np.dot(F_sin_P_M, X), F_cos_N_P)
+    # C = np.sqrt(np.abs(C_real) + C_imag ** 2)
+    # return C, _spec_zigzag(C, P)
     
 
 def spec_dct(img, P=20):
@@ -58,9 +59,9 @@ def hist(img, BIN=16):
     '''Экстракция признаков методом Hist (Гистограмма яркости)'''
     # return np.histogram(img, bins=BIN, normed=True)
     M, N = img.shape
-    top_hist = np.array([np.sum(np.array(img[:M//2,:] >= b*(256//BIN)) & np.array(img[:M//2,:] <= (b+1)*(256//BIN)-1)) for b in range(BIN)]) / M*N
-    bottom_hist = np.array([np.sum(np.array(img[M//2:,:] >= b*(256//BIN)) & np.array(img[M//2:,:] <= (b+1)*(256//BIN)-1)) for b in range(BIN)]) / M*N
-    h = np.concatenate((top_hist, bottom_hist))
+    top_hist = np.array([np.sum(np.array(img[:M//2,:] >= b*(256//BIN)) & np.array(img[:M//2,:] <= (b+1)*(256//BIN)-1)) for b in range(BIN)])
+    bottom_hist = np.array([np.sum(np.array(img[M//2:,:] >= b*(256//BIN)) & np.array(img[M//2:,:] <= (b+1)*(256//BIN)-1)) for b in range(BIN)])
+    h = np.concatenate((top_hist, bottom_hist)) / (M*N)
     return (np.array(range(2*BIN)), h), h
     
 

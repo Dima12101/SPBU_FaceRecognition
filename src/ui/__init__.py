@@ -27,15 +27,15 @@ class MainBox(BoxLayout):
         self.cl_mainbox = CL_MainBox()
         self.rs_mainbox = RS_MainBox()
 
-        self.bth_to_menu  = Button(text='Меню', on_press=self.open_menu,
-            size_hint = (0.1, 0.05), background_color = (.6, .9, 1, 1))
+        self.bth_to_menu = Button(text='Меню', on_press=self.open_menu,
+            size_hint = (.1, .05), background_color = (.6, .9, 1, 1), disabled=True)
 
         ''' ============== Menu of main boxes ============== '''        
         self.list_submainboxes = RelativeLayout()
         bth_classifier_mainbox = Button(text ="Классификатор", on_press=self.open_submain,
-            size_hint = (0.2, 0.05), pos_hint={"center_x":.5, "center_y":.55}, background_color = (.6, .9, 1, 1)            )
+            size_hint = (.2, .05), pos_hint={"center_x":.5, "center_y":.55}, background_color = (.6, .9, 1, 1)            )
         bth_search_params_mainbox = Button(text ="Исследования", on_press=self.open_submain,
-            size_hint = (0.2, 0.05), pos_hint={"center_x":.5, "center_y":.45}, background_color = (.6, .9, 1, 1))
+            size_hint = (.2, .05), pos_hint={"center_x":.5, "center_y":.45}, background_color = (.6, .9, 1, 1))
         self.list_submainboxes.add_widget(bth_classifier_mainbox)
         self.list_submainboxes.add_widget(bth_search_params_mainbox)
 
@@ -52,16 +52,18 @@ class MainBox(BoxLayout):
         if instance.text == "Классификатор": self.current_mainbox = self.cl_mainbox
         if instance.text == "Исследования": self.current_mainbox = self.rs_mainbox
         self.add_widget(self.current_mainbox)
+        self.bth_to_menu.disabled = False
 
     def open_menu(self, instance):
         if self.current_mainbox is not None:
             # self.bg.source = os.path.join(DATA_DIR, 'bg.jpg')
             self.remove_widget(self.current_mainbox) ; self.current_mainbox = None
             self.add_widget(self.list_submainboxes)
+            self.bth_to_menu.disabled = True
 
 
 class MainApp(App):
-    title = 'Detection program'
+    title = 'Recognition program'
 
     def build(self):
         Window.maximize()

@@ -42,7 +42,7 @@ class MainBox(BoxLayout):
             btn = Button(
                 text = database, on_press=self.set_database, 
                 size_hint_y = None, height = 30, 
-                background_color = (.6, .9, 1, .7)) 
+                background_color = (.6, .9, 1, .9)) 
             btn.bind(on_release = lambda btn: self.dropdown_databases.select(btn.text)) 
             self.dropdown_databases.add_widget(btn) 
         self.list_databases = Button(text ='Базы', size_hint=(.05, .5), pos_hint={"center_y":.5}, background_color = (.6, .9, 1, 1))
@@ -111,7 +111,7 @@ class MainBox(BoxLayout):
             btn = Button(
                 text = method, on_press=self.set_method, 
                 size_hint_y = None, height = 30, 
-                background_color = (.6, .9, 1, .7)) 
+                background_color = (.6, .9, 1, .9)) 
             btn.bind(on_release = lambda btn: self.dropdown_methods.select(btn.text)) 
             self.dropdown_methods.add_widget(btn) 
         self.list_methods = Button(text ='Методы', size_hint=(.6, .5), pos_hint={"center_y":.5}, background_color = (.6, .9, 1, 1))
@@ -249,7 +249,7 @@ class MainBox(BoxLayout):
             plt.plot([0,0],[0,h-1],'r--', [0,w-1],[0,0],'r--', [0,w-1],[h-1,0],'r--')
         else:
             plt.imshow(source_img_features, cmap='gray')
-        plt.title('Признаки изображения', fontsize=self.fs)
+        plt.title(f"Признаки изображения ('{self.method}')", fontsize=self.fs)
 
     def run_recognition(self, instance):        
         ''' ============== INPUT ============== '''
@@ -285,7 +285,7 @@ class MainBox(BoxLayout):
             plt.plot([0,0],[0,h-1],'r--', [0,w-1],[0,0],'r--', [0,w-1],[h-1,0],'r--')
         else:
             plt.imshow(source_img_features, cmap='gray')
-        plt.title('Признаки изображения', fontsize=self.fs)
+        plt.title(f"Признаки изображения ('{self.method}')", fontsize=self.fs)
 
         self.box_output.remove_widget(self.output_img)
         self.box_output.remove_widget(self.output_features)
@@ -319,4 +319,4 @@ class MainBox(BoxLayout):
             plt.plot([0,0],[0,h-1],'r--', [0,w-1],[0,0],'r--', [0,w-1],[h-1,0],'r--')
         else:
             plt.imshow(rec_img_features, cmap='gray')
-        plt.title('Признаки результата', fontsize=self.fs)
+        plt.title(f"Признаки результата ('{self.method}')", fontsize=self.fs)
