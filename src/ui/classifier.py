@@ -4,16 +4,14 @@ from kivy.uix.button import Button
 from kivy.uix.dropdown import DropDown 
 from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
-from kivy.graphics import Color, Rectangle
+from kivy.graphics import Color
 
 import matplotlib.pyplot as plt
-import cv2
-import imageio
-import os, glob
 
-from src.configs import ALL_DATABASES, DATA_DIR, DATABASE_CONF, ALL_METHODS, METHODS_PARAM
+from src.configs import ALL_DATABASES, DATABASE_CONF, ALL_METHODS, METHODS_PARAM
 from src.core.classifier import recognition
 from src.core import features
+from src import data
 
 
 class MainBox(BoxLayout):
@@ -29,15 +27,16 @@ class MainBox(BoxLayout):
         self.database_data = None
 
         with self.canvas:
-            Color(.2, .3, .5, 1)
-            self.bg = Rectangle(source = os.path.join(DATA_DIR, 'bg.jpg'), pos = self.pos, size = self.size)
-            self.bind(pos = self.update_bg, size = self.update_bg)
+            Color(0, 0, 0, 0)
+            # Color(.2, .3, .5, 1)
+            # self.bg = Rectangle(source = os.path.join(DATA_DIR, 'bg.jpg'), pos = self.pos, size = self.size)
+            # self.bind(pos = self.update_bg, size = self.update_bg)
 
         ''' 1. Tools BOX ================================ '''
         self.box_tools = BoxLayout(orientation='horizontal', size_hint=(1, 0.1), spacing = 10)
 
         ''' 1.1 DB List ================================ '''
-        # List of methods
+        # List of databases
         self.dropdown_databases = DropDown()
         for database in ALL_DATABASES: 
             btn = Button(
@@ -46,7 +45,7 @@ class MainBox(BoxLayout):
                 background_color = (.6, .9, 1, .7)) 
             btn.bind(on_release = lambda btn: self.dropdown_databases.select(btn.text)) 
             self.dropdown_databases.add_widget(btn) 
-        self.list_databases = Button(text ='Базы', size_hint=(.05, 1), background_color = (.6, .9, 1, 1))
+        self.list_databases = Button(text ='Базы', size_hint=(.05, .5), pos_hint={"center_y":.5}, background_color = (.6, .9, 1, 1))
         self.list_databases.bind(on_release = self.dropdown_databases.open)
         self.dropdown_databases.bind(on_select = lambda instance, x: setattr(self.list_databases, 'text', x))
 
@@ -115,14 +114,14 @@ class MainBox(BoxLayout):
                 background_color = (.6, .9, 1, .7)) 
             btn.bind(on_release = lambda btn: self.dropdown_methods.select(btn.text)) 
             self.dropdown_methods.add_widget(btn) 
-        self.list_methods = Button(text ='Методы', size_hint=(.6, 1), background_color = (.6, .9, 1, 1))
+        self.list_methods = Button(text ='Методы', size_hint=(.6, .5), pos_hint={"center_y":.5}, background_color = (.6, .9, 1, 1))
         self.list_methods.bind(on_release = self.dropdown_methods.open)
         self.dropdown_methods.bind(on_select = lambda instance, x: setattr(self.list_methods, 'text', x))
 
         self.method_param_name = Label(text=METHODS_PARAM[self.method]['name'], 
-            size_hint=(.05,0.5), pos_hint={"center_y":.5})
+            size_hint=(.05, .5), pos_hint={"center_y":.5})
         self.method_param = TextInput(text=METHODS_PARAM[self.method]['default'],
-            size_hint=(.15, 0.5), pos_hint={"center_y":.5},
+            size_hint=(.15, .5), pos_hint={"center_y":.5},
             multiline=False, input_type='number', input_filter='int')
 
         self.box_control_methos.add_widget(self.box_runs)
@@ -171,17 +170,7 @@ class MainBox(BoxLayout):
         self.index_border_right.text = str(DATABASE_CONF[self.database]['number_img'])
 
     def _update_database(self):
-        self.database_data = []
-        for g_i in range(DATABASE_CONF[self.database]['number_group']):
-            database_group = []
-            for im_i in range(DATABASE_CONF[self.database]['number_img']):
-                if self.database == 'ORL':
-                    img = cv2.imread(DATABASE_CONF['ORL']['img_path'].format(g=g_i+1, im=im_i+1), -1)
-                else:
-                    name_group = g_i+1 if g_i+1 >= 10 else f'0{g_i+1}'
-                    img = imageio.imread(list(glob.glob(DATABASE_CONF['Yale_faces']['img_path'].format(g=name_group)))[im_i])
-                database_group.append(img)
-            self.database_data.append(database_group)   
+        self.database_data = data.load(self.database)
 
     def _update_img(self):
         self.source_img = self.database_data[self.index_group-1][self.index_img-1]
@@ -291,11 +280,11 @@ class MainBox(BoxLayout):
             x, y = source_img_features
             plt.plot(x, y)
         elif self.method in ['spec_dct', 'spec_dft']:
-            h, w = rec_img_features.shape
-            plt.imshow(rec_img_features, cmap='gray')
+            h, w = source_img_features.shape
+            plt.imshow(source_img_features, cmap='gray')
             plt.plot([0,0],[0,h-1],'r--', [0,w-1],[0,0],'r--', [0,w-1],[h-1,0],'r--')
         else:
-            plt.imshow(rec_img_features, cmap='gray')
+            plt.imshow(source_img_features, cmap='gray')
         plt.title('Признаки изображения', fontsize=self.fs)
 
         self.box_output.remove_widget(self.output_img)
@@ -305,8 +294,14 @@ class MainBox(BoxLayout):
         self.box_output.add_widget(self.output_img)
         plt.figure(3)
         plt.clf() ; plt.cla()
-        plt.imshow(rec_img, cmap='gray')
-        plt.title('Результат распознавания', fontsize=self.fs)
+        rec_img_gr, rec_img_i = rec_img
+        plt.imshow(self.database_data[rec_img_gr][rec_img_i], cmap='gray')
+        plt.title("Результат распознавания ( {im_i}/{im_n} | {g_i}/{g_n} )".format(
+            im_i=rec_img_i+1,
+            im_n=DATABASE_CONF[self.database]['number_img'],
+            g_i=rec_img_gr+1,
+            g_n=DATABASE_CONF[self.database]['number_group']
+        ), fontsize=self.fs)
 
         self.output_features = FigureCanvasKivyAgg(plt.figure(4))
         self.box_output.add_widget(self.output_features)

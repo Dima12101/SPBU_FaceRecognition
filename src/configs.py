@@ -5,11 +5,11 @@ ALL_METHODS = [
     'spec_dft', 'spec_dct']
 
 METHODS_PARAM = {
-    'scale': {'name': 'l', 'default': '2'},
-    'hist': {'name': 'BIN', 'default': '32'},
-    'grad': {'name': 'W', 'default': '10'},
-    'spec_dft': {'name': 'P', 'default': '20'},
-    'spec_dct': {'name': 'P', 'default': '20'}
+    'scale': {'name': 'l', 'default': '2', 'range': (2, 11)},
+    'hist': {'name': 'BIN', 'default': '32', 'range': (8, 33)},
+    'grad': {'name': 'W', 'default': '10', 'range': (4, 21)},
+    'spec_dft': {'name': 'P', 'default': '20', 'range': (6, 31)},
+    'spec_dct': {'name': 'P', 'default': '20', 'range': (6, 31)}
 }
 
 ALL_DATABASES = ['ORL', 'Yale_faces']
