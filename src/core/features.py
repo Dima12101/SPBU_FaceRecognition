@@ -72,7 +72,7 @@ def grad(img, W=16):
     grads = []
     for x in range(W,M-W):
         top = X[x-W:x,:]
-        bottom = np.flip(X[x:x+W,:], axis=1)
+        bottom = np.flip(X[x:x+W,:], axis=0)
         grads.append(dist(top, bottom))
     grads = np.array(grads)
     return (np.array(range(len(grads))), grads), grads

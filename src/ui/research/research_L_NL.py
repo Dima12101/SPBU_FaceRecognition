@@ -33,7 +33,7 @@ class ResearchBox(BoxLayout):
 
         '''2. RESULT BOX'''
         self.box_result = BoxLayout(orientation='horizontal', size_hint=(1, .95), spacing = 5)
-        self.L_score = FigureCanvasKivyAgg(plt.figure(7)) ; plt.title('Результаты L/N-L', fontsize=self.fs)
+        self.L_score = FigureCanvasKivyAgg(plt.figure(7)) ; plt.title('Результат L/N-L', fontsize=self.fs)
         self.box_result.add_widget(self.L_score)
 
         self.add_widget(self.box_run_research)
@@ -77,4 +77,4 @@ class ResearchBox(BoxLayout):
         plt.plot(x, scores)
         plt.ylabel("Точность")
         plt.xlabel("Значение 'L' (кол-во эталонов / кол-во тестов)")
-        plt.title("Результаты L/N-L", fontsize=self.fs)
+        plt.title(f"Результаты L/N-L ('{self.method}';{self.method_param_name.text}={param_val})", fontsize=self.fs)

@@ -1,6 +1,8 @@
+from collections import Counter
+
 from src.core.base import dist
 from src.core import features
-from src.configs import METHODS_PARAM, DATABASE_CONF
+from src.configs import ALL_DATABASES, METHODS_PARAM, ALL_METHODS, DATABASE_CONF
 
 def recognition(img, method, param, database_data, g_range, i_range):
     print(f"START 'Recognition'. Method '{method}'[{param}]")
@@ -39,6 +41,20 @@ def classifiers(templates, tests):
         class_search  = template_search[1]
         if class_test == class_search: number_true += 1
     score = (number_true / len(tests)) * 100 # %
+    return score
+
+def parallel_classifiers(templates, tests, number_tests):
+    number_true = 0
+    for i in range(number_tests):
+        class_test = tests[ALL_DATABASES[0]][i][1]
+        class_search = Counter()
+        for method in ALL_DATABASES:
+            test = tests[method][i]
+            template_search = _search(templates, test)
+            class_search[template_search[1]] += 1
+        class_voting = class_search.most_common(1)[0][0]
+        if class_test == class_voting: number_true += 1
+    score = (number_true / number_tests) * 100 # %
     return score
 
 def database_to_vec(data, database, method, param):
@@ -98,6 +114,30 @@ def research_L_NL(database_data, database, method, param):
             
         # Compute score
         score = classifiers(templates, tests)
+        scores.append(score)
+        print(f'{L=} ; {score=}')
+    return scores
+
+def research_parallel_L_NL(database_data, database, params):
+    print(f'{database=} ; {params=}')
+    # Settings
+    number_classes = DATABASE_CONF[database]['number_group']
+    number_img = DATABASE_CONF[database]['number_img']
+
+    data_vec = {}
+    for method in ALL_METHODS:
+        data_vec[method] = database_to_vec(database_data, database, method, params[method])
+
+    scores = []
+    for L in range(1, number_img):
+        # Create template/test
+        templates = {} ; tests = {}
+        for method in ALL_METHODS:
+            templates[method] = [(data_vec[method][cl][im], cl) for cl in range(number_classes) for im in range(L)]
+            tests[method] = [(data_vec[method][cl][im], cl) for cl in range(number_classes) for im in range(L,number_img)]            
+            
+        # Compute score
+        score = parallel_classifiers(templates, tests, number_img-L)
         scores.append(score)
         print(f'{L=} ; {score=}')
     return scores
