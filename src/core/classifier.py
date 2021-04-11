@@ -46,11 +46,11 @@ def classifiers(templates, tests):
 def parallel_classifiers(templates, tests, number_tests):
     number_true = 0
     for i in range(number_tests):
-        class_test = tests[ALL_DATABASES[0]][i][1]
+        class_test = tests[ALL_METHODS[0]][i][1]
         class_search = Counter()
-        for method in ALL_DATABASES:
+        for method in ALL_METHODS:
             test = tests[method][i]
-            template_search = _search(templates, test)
+            template_search = _search(templates[method], test)
             class_search[template_search[1]] += 1
         class_voting = class_search.most_common(1)[0][0]
         if class_test == class_voting: number_true += 1
@@ -118,7 +118,7 @@ def research_L_NL(database_data, database, method, param):
         print(f'{L=} ; {score=}')
     return scores
 
-def research_parallel_L_NL(database_data, database, params):
+def research_parallel_system(database_data, database, params):
     print(f'{database=} ; {params=}')
     # Settings
     number_classes = DATABASE_CONF[database]['number_group']
