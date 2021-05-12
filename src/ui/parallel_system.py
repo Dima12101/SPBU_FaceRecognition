@@ -10,8 +10,9 @@ import matplotlib.pyplot as plt
 
 from src.configs import ALL_DATABASES, DATABASE_CONF, ALL_METHODS, METHODS_PARAM
 from src import data
-from src.core.classifier import research_parallel_system
+from src.core.classifier import research_parallel_system, research_parallel_system_new
 
+import time
 
 class MainBox(BoxLayout):
 
@@ -45,10 +46,19 @@ class MainBox(BoxLayout):
         self.dropdown_databases.bind(on_select = lambda instance, x: setattr(self.list_databases, 'text', x))
         
         ''' 1.2 RUN ================================ '''
-        self.bth_run_research = Button(text='Расчёт', size_hint=(.5, 1), on_press=self.run_research, background_color = (.5, 1, 1, 1))
+        self.bth_run_research = Button(text='Расчёт', size_hint=(.4, 1), on_press=self.run_research, background_color = (.5, 1, 1, 1))
         
+        self.box_L = BoxLayout(orientation='horizontal', size_hint=(.1, 1), spacing = 1)
+        L_name = Label(text="L", size_hint=(.4, 1))
+        self.L = TextInput(
+            text='5', 
+            size_hint=(.6, 1), multiline=False, input_type='number', input_filter='int')
+        self.box_L.add_widget(L_name)
+        self.box_L.add_widget(self.L)
+
         self.box_tools.add_widget(self.list_databases)
         self.box_tools.add_widget(self.bth_run_research)
+        self.box_tools.add_widget(self.box_L)
 
         ''' 2. Research BOX ================================ '''
 
@@ -93,13 +103,15 @@ class MainBox(BoxLayout):
         for method in ALL_METHODS:
             params[method] = int(self.methods_params[method].text)
 
-        scores = research_parallel_system(self.database_data, self.database, params)
+        L = int(self.L.text)
 
         number_classes = DATABASE_CONF[self.database]['number_group']
         number_img = DATABASE_CONF[self.database]['number_img']
 
-        x = [f'{im}/{number_img-im}\n{im*number_classes}/{(number_img-im)*number_classes}' for im in range(1, number_img)]
-
+        scores = research_parallel_system_new(self.database_data, self.database, params, L)
+        number_img = DATABASE_CONF[self.database]['number_img']
+        # x = [im for im in range(1, (number_img-L)*number_classes+1)]
+        x = list(range(1, (number_img-L)*number_classes+1))
         self.box_result.remove_widget(self.result)
         self.result = FigureCanvasKivyAgg(plt.figure(8))
         self.box_result.add_widget(self.result)
@@ -107,5 +119,20 @@ class MainBox(BoxLayout):
         plt.clf() ; plt.cla()
         plt.plot(x, scores)
         plt.ylabel("Точность, %")
-        plt.xlabel("Значение 'L' (кол-во эталонов / кол-во тестов)")
-        plt.title(f"Результаты параллельной системы L/N-L", fontsize=self.fs)
+        plt.xlabel(f"Кол-во тестовых изображений (L={L})")
+        plt.title(f"Результаты параллельной системы", fontsize=self.fs)
+
+        # for scores in research_parallel_system_new(self.database_data, self.database, params):
+        #     x = [f'{im*number_classes}' for im in range(1, len(scores)+1)]
+
+        #     self.box_result.remove_widget(self.result)
+        #     self.result = FigureCanvasKivyAgg(plt.figure(8))
+        #     self.box_result.add_widget(self.result)
+        #     plt.figure(8)
+        #     plt.clf() ; plt.cla()
+        #     plt.plot(x, scores)
+        #     plt.ylabel("Точность, %")
+        #     plt.xlabel(f"Кол-во тестовых изображений (L={L})")
+        #     plt.title(f"Результаты параллельной системы", fontsize=self.fs)
+
+        #     time.sleep(3)

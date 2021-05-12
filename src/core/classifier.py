@@ -1,5 +1,7 @@
 from collections import Counter
 
+import numpy as np
+
 from src.core.base import dist
 from src.core import features
 from src.configs import ALL_DATABASES, METHODS_PARAM, ALL_METHODS, DATABASE_CONF
@@ -118,6 +120,7 @@ def research_L_NL(database_data, database, method, param):
         print(f'{L=} ; {score=}')
     return scores
 
+
 def research_parallel_system(database_data, database, params):
     print(f'{database=} ; {params=}')
     # Settings
@@ -140,4 +143,39 @@ def research_parallel_system(database_data, database, params):
         score = parallel_classifiers(templates, tests, number_img-L)
         scores.append(score)
         print(f'{L=} ; {score=}')
+    return scores
+
+
+
+def research_parallel_system_new(database_data, database, params, L):
+    print(f'{database=} ; {params=}; {L=}')
+    # Settings
+    number_classes = DATABASE_CONF[database]['number_group']
+    number_img = DATABASE_CONF[database]['number_img']
+
+    data_vec = {}
+    for method in ALL_METHODS:
+        data_vec[method] = database_to_vec(database_data, database, method, params[method])
+
+    templates = {}
+    for method in ALL_METHODS:
+        templates[method] = [(data_vec[method][cl][im], cl) for cl in range(number_classes) for im in range(L)]
+
+    scores = []
+
+    tests = {}
+    for method in ALL_METHODS:
+        tests[method] = []
+
+
+    for i_num in range(number_img-L):
+        for i_cl in range(number_classes):
+            for method in ALL_METHODS:
+                tests[method].append((data_vec[method][i_cl][L+i_num], i_cl))
+                test_num = len(tests[method])
+        
+            # Compute score
+            score = parallel_classifiers(templates, tests, test_num)
+            scores.append(score)
+            print(f'num={test_num} {score=}')
     return scores
